@@ -1,4 +1,4 @@
-import * as index from "./index";
+import { validateActivityPack } from "./vertigis-license-validation";
 
 let mainResult: Promise<any> | undefined;
 
@@ -7,9 +7,20 @@ export async function main(): Promise<any> {
         return mainResult;
     }
 
-    // If you need to do activity pack initialization logic
-    // that can happen here.
+    const valid = await validateActivityPack();
+    if (!valid) {
+        console.error("Activity pack validation failed. Activities will not load.");
+        return {};
+    }
 
-    mainResult = Promise.resolve(index);
+    // Dynamic import to avoid circular dependency with index.ts
+    const [autocomplete, dateTimeRangeList] = await Promise.all([
+        import("./elements/Autocomplete"),
+        import("./elements/DateTimeRangePicker"),
+    ]);
+    mainResult = Promise.resolve({
+        AutocompleteRegistration: autocomplete.default,
+        DateTimeRangeList: dateTimeRangeList.default,
+    });
     return mainResult;
 }
