@@ -4,9 +4,10 @@ This repo contains a small library of **custom form elements** for VertiGIS Stud
 
 ## Elements
 
-* **Autocomplete** — theme‑aware, Popper‑based dropdown using MUI’s `useAutocomplete`. ✓ selection tick, multi‑select chips, Calcite token support.
+* **Autocomplete** — theme‑aware, Popper‑based dropdown using MUI’s `useAutocomplete`. Floating outlined label, ✓ selection tick, multi‑select chips, Calcite token support.
   → See **[`docs/Autocomplete.md`](./docs/Autocomplete.md)**
 
+* **DateTimeRangeList** — date range + time picker that generates a per‑day list of date/time entries. Built on MUI X Date Pickers Pro. Supports weekend exclusion, duplicate replacement, and item removal.
 
 ---
 
@@ -24,11 +25,12 @@ By default this runs `vertigis-workflow-sdk build` and produces an optimized bun
 
 ### Exporting elements
 
-Make sure your `src/index.ts` re‑exports each element’s registration:
+`src/index.ts` re‑exports each element’s registration and the `main` init gate:
 
 ```ts
-export { default as Autocomplete } from "./elements/Autocomplete";
-// export { default as OtherElement } from "./elements/OtherElement";
+export { main } from "./main";
+export { default as AutocompleteRegistration } from "./elements/Autocomplete";
+export { default as DateTimeRangeList } from "./elements/DateTimeRangePicker";
 ```
 
 ---
@@ -60,8 +62,10 @@ Common Calcite tokens referenced across elements:
 src/
   elements/
     Autocomplete.tsx
+    DateTimeRangePicker.tsx
   index.ts
   main.ts
+  vertigis-license-validation.ts
 
 docs/
   Autocomplete.md

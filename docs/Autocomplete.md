@@ -10,6 +10,7 @@ A theme‑aware Autocomplete for **VertiGIS Studio Workflow / Web**, built on **
 ## Features
 
 * **Controlled input** (no reliance on MUI internal setters) → fixes `setUaInputValue is not a function`.
+* **Floating outlined label** — the label rests inside the input as placeholder text, then shrinks and floats into the top border when the field is focused or has a value (MUI outlined TextField style).
 * **Single & multi‑select**, clearable, optional **free‑solo** text.
 * Popup rendered with **MUI Popper** (portaled) so it **stays above** Workflow footers/overlays.
 * **Calcite‑aware theming** (no hard‑coded colors).
@@ -49,7 +50,6 @@ import AutocompleteRegistration from "./elements/Autocomplete";
 
 <AutocompleteRegistration.component
   label="Assets"
-  placeholder="Select…"
   options={["Bridge", "Road", "Tunnel"]}
   multiple
   openOnFocus
@@ -77,8 +77,8 @@ import AutocompleteRegistration from "./elements/Autocomplete";
 | `selectOnFocus`     | `boolean`                                        | MUI default | Select input text when focused.                          |
 | `clearOnBlur`       | `boolean`                                        | MUI default | Clear input on blur if nothing selected.                 |
 | `handleHomeEndKeys` | `boolean`                                        | MUI default | Home/End jump to first/last option when open.            |
-| `placeholder`       | `string`                                         |        `""` | Input placeholder.                                       |
-| `label`             | `string`                                         |           — | Label above the field.                                   |
+| `placeholder`       | `string`                                         |        `""` | Fallback placeholder (shown only when no `label` is set).|
+| `label`             | `string`                                         | `"Select…"` | Floating label — rests inside the input, floats into the top border on focus or when a value is present. |
 | `helperText`        | `string`                                         |        `""` | Helper text below the field.                             |
 | `autoFocus`         | `boolean`                                        |     `false` | Autofocus input on mount.                                |
 | `readOnly`          | `boolean`                                        |     `false` | Read‑only mode.                                          |

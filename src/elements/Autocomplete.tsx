@@ -109,16 +109,21 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         zIndexDropdown: "var(--calcite-floating-ui-z-index, var(--calcite-app-z-index-dropdown, 9999))",
     } as const;
 
+    // Determine whether the floating label should be in the "shrunk" (floated) position
+    const hasValue = multiple
+        ? Array.isArray(value) && (value as Primitive[]).length > 0
+        : value != null && value !== "";
+
     const styles: Record<string, React.CSSProperties> = {
         root: { position: "relative", fontFamily: "inherit", color: theme.text },
-        labelRow: { marginBottom: 4, fontSize: 12, color: theme.textMuted },
         inputWrap: {
+            position: "relative",
             display: "flex",
             alignItems: "center",
             flexWrap: "wrap",
             border: `1px solid ${theme.border}`,
             borderRadius: theme.radius as any,
-            padding: "6px 10px",
+            padding: "16.5px 14px 8.5px",
             background: disabled ? "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, inherit))" : theme.surface,
             outline: `2px solid transparent`,
             transition: "outline 120ms ease, background 120ms ease, border-color 120ms ease",
@@ -127,6 +132,29 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
             outline: `2px solid ${theme.brand}`,
             outlineOffset: theme.focusOffset as any,
             border: `1px solid ${theme.borderInput}`,
+        },
+        floatingLabel: {
+            position: "absolute",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 14,
+            color: theme.textMuted,
+            pointerEvents: "none",
+            transition: "transform 150ms ease, font-size 150ms ease, top 150ms ease, color 150ms ease, background 150ms ease, padding 150ms ease",
+            lineHeight: 1,
+            zIndex: 1,
+            padding: "0 4px",
+            background: "transparent",
+        },
+        floatingLabelShrunk: {
+            top: 0,
+            transform: "translateY(-50%)",
+            fontSize: 12,
+            background: disabled ? "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, inherit))" : theme.surface,
+        },
+        floatingLabelFocused: {
+            color: theme.brand,
         },
         input: {
             flex: 1,
@@ -147,7 +175,6 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
             border: `1px solid ${theme.border}`,
             borderRadius: theme.radius as any,
             boxShadow: theme.shadow as any,
-            // remove default bullets/margins on <ul>
             listStyle: "none",
             padding: 0,
             margin: 0,
@@ -261,14 +288,13 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
 
     const inputProps = getInputProps();
     const readOnlyOrDisabled = disabled || readOnly;
+    const labelShrunk = focused || hasValue || input.length > 0;
 
     // Match popup width to field, if not provided via prop
     const computedListboxWidth = listboxWidth ?? anchorEl?.clientWidth;
 
     return (
         <div {...getRootProps()} className={className} style={{ ...styles.root, ...style }} aria-disabled={readOnlyOrDisabled}>
-            {label && <div style={styles.labelRow}>{label}</div>}
-
             <div
                 ref={(el) => {
                     (setAnchorEl as any)?.(el);
@@ -276,6 +302,18 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                 }}
                 style={{ ...styles.inputWrap, ...(focused ? styles.inputWrapFocused : {}) }}
             >
+                {label && (
+                    <label
+                        style={{
+                            ...styles.floatingLabel,
+                            ...(labelShrunk ? styles.floatingLabelShrunk : {}),
+                            ...(focused ? styles.floatingLabelFocused : {}),
+                        }}
+                    >
+                        {label}
+                    </label>
+                )}
+
                 {multiple && Array.isArray(uaValue) && uaValue.length > 0 &&
                     (uaValue as Primitive[]).map((opt: Primitive, index: number) => {
                         const { key, ...tagProps } = (getTagProps as any)({ index });
@@ -300,7 +338,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                 <input
                     {...inputProps}
                     style={styles.input}
-                    placeholder={placeholder}
+                    placeholder={labelShrunk && !label ? placeholder : labelShrunk ? "" : ""}
                     disabled={readOnlyOrDisabled}
                     autoFocus={autoFocus}
                     value={input}
@@ -396,7 +434,7 @@ const AutocompleteElementRegistration: FormElementRegistration<AutocompleteProps
         openOnFocus: false,
         clearable: true,
 
-        label: "Select…",
+        label: "Select\u2026",
         helperText: "",
         autoFocus: false,
         readOnly: false,
