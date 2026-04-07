@@ -50,6 +50,7 @@ interface AutocompleteProps extends FormElementProps<Primitive | Primitive[] | n
 /**
  * Autocomplete form element (MUI hook + VertiGIS/Calcite styling) that accepts a simple JSON array.
  * - Controlled input (no reliance on MUI internal setters)
+ * - Outlined floating label that shrinks into the border on focus / when a value is present
  * - Transparent popup that inherits Calcite theme, with ✓ for selected items
  * - Popper/portal so the list renders above the form footer
  */
@@ -96,103 +97,18 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
 
     // ---- Calcite/VertiGIS tokens (favor host variables; minimal fallbacks) ----
     const theme = {
-        surface: "var(--calcite-ui-foreground-1, var(--calcite-color-foreground-1, inherit))",
-        surfaceElevated: "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, inherit))",
-        border: "var(--calcite-ui-border-1, var(--calcite-color-border-1, currentColor))",
-        borderInput: "var(--calcite-ui-border-input, var(--calcite-ui-border-1, currentColor))",
+        surface: "var(--calcite-ui-foreground-1, var(--calcite-color-foreground-1, #fff))",
+        surfaceElevated: "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, #f5f5f5))",
+        disabledBg: "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, #eee))",
+        border: "var(--calcite-ui-border-1, var(--calcite-color-border-1, #ccc))",
+        borderInput: "var(--calcite-ui-border-input, var(--calcite-ui-border-1, #ccc))",
         text: "var(--calcite-ui-text-1, var(--calcite-color-text-1, inherit))",
-        textMuted: "var(--calcite-ui-text-3, var(--calcite-color-text-3, inherit))",
-        brand: "var(--calcite-ui-brand, var(--calcite-color-brand, currentColor))",
+        textMuted: "var(--calcite-ui-text-3, var(--calcite-color-text-3, #6a6a6a))",
+        brand: "var(--calcite-ui-brand, var(--calcite-color-brand, #007ac2))",
         focusOffset: "var(--calcite-ui-focus-offset-invert, 0)",
         radius: "var(--calcite-border-radius, 8px)",
         shadow: "var(--calcite-shadow-1, 0 8px 24px rgba(0,0,0,0.08))",
-        zIndexDropdown: "var(--calcite-floating-ui-z-index, var(--calcite-app-z-index-dropdown, 9999))",
     } as const;
-
-    const styles: Record<string, React.CSSProperties> = {
-        root: { position: "relative", fontFamily: "inherit", color: theme.text },
-        inputWrap: {
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            border: `1px solid ${theme.border}`,
-            borderRadius: theme.radius as any,
-            padding: "16.5px 14px 8.5px",
-            background: disabled ? "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, inherit))" : theme.surface,
-            outline: `2px solid transparent`,
-            transition: "outline 120ms ease, background 120ms ease, border-color 120ms ease",
-        },
-        inputWrapFocused: {
-            outline: `2px solid ${theme.brand}`,
-            outlineOffset: theme.focusOffset as any,
-            border: `1px solid ${theme.borderInput}`,
-        },
-        floatingLabel: {
-            position: "absolute",
-            left: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 14,
-            color: theme.textMuted,
-            pointerEvents: "none",
-            transition: "transform 150ms ease, font-size 150ms ease, top 150ms ease, color 150ms ease, background 150ms ease, padding 150ms ease",
-            lineHeight: 1,
-            zIndex: 1,
-            padding: "0 4px",
-            background: "transparent",
-        },
-        floatingLabelShrunk: {
-            top: 0,
-            transform: "translateY(-50%)",
-            fontSize: 12,
-            background: disabled ? "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, inherit))" : theme.surface,
-        },
-        floatingLabelFocused: {
-            color: theme.brand,
-        },
-        input: {
-            flex: 1,
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            fontSize: 14,
-            padding: 0,
-            minWidth: 60,
-            color: theme.text,
-        },
-        clearBtn: { border: "none", background: "transparent", fontSize: 16, cursor: "pointer", color: theme.textMuted },
-        listbox: {
-            zIndex: 1,
-            maxHeight: listboxMaxHeight,
-            overflow: "auto",
-            background: "var(--primaryBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, inherit)))",
-            border: `1px solid ${theme.border}`,
-            borderRadius: theme.radius as any,
-            boxShadow: theme.shadow as any,
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-        },
-        option: { padding: "8px 10px", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center", gap: 8 },
-        optionDisabled: { padding: "8px 10px", color: theme.textMuted, cursor: "not-allowed", display: "flex", alignItems: "center", gap: 8 },
-        helper: { marginTop: 4, fontSize: 12, color: theme.textMuted },
-        tag: {
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            borderRadius: 999,
-            border: `1px solid ${theme.border}`,
-            padding: "2px 8px",
-            fontSize: 12,
-            background: "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, inherit))",
-            color: theme.text,
-            marginRight: 6,
-            marginBottom: 6,
-        },
-        tagBtn: { cursor: "pointer", border: "none", background: "transparent", fontSize: 14, lineHeight: 1, color: theme.textMuted },
-        check: { width: 16, display: "inline-block", textAlign: "center" },
-    };
 
     // Unified event emitter
     const emit = React.useCallback((name: string, payload?: any) => {
@@ -283,7 +199,8 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
 
     const inputProps = getInputProps();
     const readOnlyOrDisabled = disabled || readOnly;
-    // Derive from the hook's authoritative value, not the Workflow prop
+
+    // Floating label state: shrink when focused, has typed text, or has a selected value
     const hasValue = multiple
         ? Array.isArray(uaValue) && (uaValue as Primitive[]).length > 0
         : uaValue != null && uaValue !== "";
@@ -292,37 +209,98 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
     // Match popup width to field, if not provided via prop
     const computedListboxWidth = listboxWidth ?? anchorEl?.clientWidth;
 
+    // ---- Resolve background for the label notch ----
+    // CSS variables can't be read synchronously, so we read the computed value from the
+    // anchor element to produce a concrete background-color for the label's notch gap.
+    const [resolvedSurface, setResolvedSurface] = React.useState<string>("#fff");
+    React.useEffect(() => {
+        if (!anchorEl) return;
+        const cs = anchorEl.ownerDocument.defaultView?.getComputedStyle(anchorEl);
+        if (cs) {
+            const bg = cs.backgroundColor;
+            if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+                setResolvedSurface(bg);
+            }
+        }
+    }, [anchorEl, disabled]);
+
     return (
-        <div {...getRootProps()} className={className} style={{ ...styles.root, ...style }} aria-disabled={readOnlyOrDisabled}>
+        <div {...getRootProps()} className={className} style={{ position: "relative", fontFamily: "inherit", color: theme.text, ...style }} aria-disabled={readOnlyOrDisabled}>
+            {/* Fieldset + legend technique for the outlined notch (same as MUI OutlinedInput) */}
             <div
                 ref={(el) => {
                     (setAnchorEl as any)?.(el);
                     setAnchorElLocal(el as HTMLElement | null);
                 }}
-                style={{ ...styles.inputWrap, ...(focused ? styles.inputWrapFocused : {}) }}
+                style={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 4,
+                    border: `1px solid ${focused ? theme.brand : theme.border}`,
+                    borderRadius: theme.radius as any,
+                    padding: label ? "18px 10px 6px" : "8px 10px",
+                    background: disabled ? theme.disabledBg : theme.surface,
+                    outline: focused ? `1px solid ${theme.brand}` : "none",
+                    transition: "border-color 120ms ease, outline 120ms ease",
+                }}
             >
+                {/* Floating label */}
                 {label && (
-                    <label
+                    <span
                         style={{
-                            ...styles.floatingLabel,
-                            ...(labelShrunk ? styles.floatingLabelShrunk : {}),
-                            ...(focused ? styles.floatingLabelFocused : {}),
+                            position: "absolute",
+                            left: 8,
+                            // Resting: vertically centered; shrunk: on the border
+                            top: labelShrunk ? 0 : "50%",
+                            transform: labelShrunk ? "translateY(-50%) scale(0.85)" : "translateY(-50%) scale(1)",
+                            transformOrigin: "left center",
+                            fontSize: 14,
+                            lineHeight: "1",
+                            color: focused ? theme.brand : theme.textMuted,
+                            pointerEvents: "none",
+                            // The notch: a background strip that hides the border behind the label text
+                            backgroundColor: labelShrunk ? resolvedSurface : "transparent",
+                            padding: labelShrunk ? "0 4px" : "0",
+                            zIndex: 1,
+                            transition: "top 150ms ease, transform 150ms ease, color 150ms ease, background-color 150ms ease, padding 150ms ease",
+                            whiteSpace: "nowrap",
                         }}
                     >
                         {label}
-                    </label>
+                    </span>
                 )}
 
+                {/* Multi-select chips */}
                 {multiple && Array.isArray(uaValue) && uaValue.length > 0 &&
                     (uaValue as Primitive[]).map((opt: Primitive, index: number) => {
                         const { key, ...tagProps } = (getTagProps as any)({ index });
                         return (
-                            <span key={key} {...tagProps} style={styles.tag}>
-                {String(opt)}
+                            <span key={key} {...tagProps} style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                borderRadius: 999,
+                                border: `1px solid ${theme.border}`,
+                                padding: "2px 8px",
+                                fontSize: 12,
+                                background: theme.surfaceElevated,
+                                color: theme.text,
+                            }}>
+                                {String(opt)}
                                 {!readOnlyOrDisabled && (
                                     <button
                                         type="button"
-                                        style={styles.tagBtn}
+                                        style={{
+                                            cursor: "pointer",
+                                            border: "none",
+                                            background: "transparent",
+                                            fontSize: 14,
+                                            lineHeight: 1,
+                                            color: theme.textMuted,
+                                            padding: 0,
+                                        }}
                                         onClick={tagProps.onDelete}
                                         aria-label={`Remove ${String(opt)}`}
                                         title={`Remove ${String(opt)}`}
@@ -330,14 +308,24 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                                         ×
                                     </button>
                                 )}
-              </span>
+                            </span>
                         );
                     })}
 
                 <input
                     {...inputProps}
-                    style={styles.input}
-                    placeholder={labelShrunk && !label ? placeholder : labelShrunk ? "" : ""}
+                    style={{
+                        flex: 1,
+                        border: "none",
+                        outline: "none",
+                        background: "transparent",
+                        fontSize: 14,
+                        padding: 0,
+                        minWidth: 60,
+                        color: theme.text,
+                        fontFamily: "inherit",
+                    }}
+                    placeholder={!label ? placeholder : ""}
                     disabled={readOnlyOrDisabled}
                     autoFocus={autoFocus}
                     value={input}
@@ -367,7 +355,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                             emit("clear", { value: cleared });
                             emit("change", { value: cleared });
                         }}
-                        style={styles.clearBtn}
+                        style={{ border: "none", background: "transparent", fontSize: 16, cursor: "pointer", color: theme.textMuted, padding: 0 }}
                     >
                         ×
                     </button>
@@ -382,7 +370,19 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                 disablePortal={false}
                 style={{ zIndex: "var(--calcite-floating-ui-z-index, var(--calcite-app-z-index-dropdown, 9999))" }}
             >
-                <ul {...getListboxProps()} style={{ ...styles.listbox, width: computedListboxWidth }} role="listbox">
+                <ul {...getListboxProps()} style={{
+                    zIndex: 1,
+                    maxHeight: listboxMaxHeight,
+                    overflow: "auto",
+                    background: "var(--primaryBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, #fff)))",
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: theme.radius as any,
+                    boxShadow: theme.shadow as any,
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    width: computedListboxWidth,
+                }} role="listbox">
                     {(groupedOptions as Primitive[]).map((opt, index) => {
                         const { key, ...optionProps } = getOptionProps({ option: opt, index });
                         const disabledOpt = getOptionDisabled?.(opt) ?? false;
@@ -396,19 +396,23 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                                 onMouseEnter={(e) => { (optionProps as any).onMouseEnter?.(e); (optionProps as any).onMouseOver?.(e); setHoveredIndex(index); }}
                                 onMouseLeave={(e) => { (optionProps as any).onMouseLeave?.(e); setHoveredIndex((prev) => (prev === index ? null : prev)); }}
                                 style={{
-                                    ...(disabledOpt ? styles.optionDisabled : styles.option),
+                                    padding: "8px 10px",
+                                    cursor: disabledOpt ? "not-allowed" : "pointer",
+                                    color: disabledOpt ? theme.textMuted : theme.text,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
                                     background:
                                         hoveredIndex === index
-                                            ? "var(--itemHoverBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, inherit)))"
+                                            ? "var(--itemHoverBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, rgba(0,0,0,0.04))))"
                                             : (selected
-                                                ? "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, inherit))"
+                                                ? "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, rgba(0,0,0,0.04)))"
                                                 : undefined),
-
                                 }}
                                 aria-disabled={disabledOpt}
                                 aria-selected={selected}
                             >
-                                <span style={{ ...styles.check, opacity: selected ? 1 : 0 }}>✓</span>
+                                <span style={{ width: 16, display: "inline-block", textAlign: "center", opacity: selected ? 1 : 0 }}>✓</span>
                                 <span>{String(opt)}</span>
                             </li>
                         );
@@ -416,7 +420,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                 </ul>
             </Popper>
 
-            {helperText && <div style={styles.helper}>{helperText}</div>}
+            {helperText && <div style={{ marginTop: 4, fontSize: 12, color: theme.textMuted }}>{helperText}</div>}
         </div>
     );
 }
