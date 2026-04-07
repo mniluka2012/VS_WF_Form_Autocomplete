@@ -109,11 +109,6 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         zIndexDropdown: "var(--calcite-floating-ui-z-index, var(--calcite-app-z-index-dropdown, 9999))",
     } as const;
 
-    // Determine whether the floating label should be in the "shrunk" (floated) position
-    const hasValue = multiple
-        ? Array.isArray(value) && (value as Primitive[]).length > 0
-        : value != null && value !== "";
-
     const styles: Record<string, React.CSSProperties> = {
         root: { position: "relative", fontFamily: "inherit", color: theme.text },
         inputWrap: {
@@ -288,6 +283,10 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
 
     const inputProps = getInputProps();
     const readOnlyOrDisabled = disabled || readOnly;
+    // Derive from the hook's authoritative value, not the Workflow prop
+    const hasValue = multiple
+        ? Array.isArray(uaValue) && (uaValue as Primitive[]).length > 0
+        : uaValue != null && uaValue !== "";
     const labelShrunk = focused || hasValue || input.length > 0;
 
     // Match popup width to field, if not provided via prop
