@@ -4,7 +4,7 @@ This repo contains a small library of **custom form elements** for VertiGIS Stud
 
 ## Elements
 
-* **Autocomplete** — theme‑aware, Popper‑based dropdown using MUI’s `useAutocomplete`. Floating outlined label, ✓ selection tick, multi‑select chips, Calcite token support.
+* **Autocomplete** — theme‑aware, Popper‑based dropdown using MUI’s `useAutocomplete`. Floating outlined label, ✓ selection tick, multi‑select chips, sort order, default pre‑selection, required/error state, and full VertiGIS host token support.
   → See **[`docs/Autocomplete.md`](./docs/Autocomplete.md)**
 
 * **DateTimeRangeList** — date range + time picker that generates a per‑day list of date/time entries. Built on MUI X Date Pickers Pro. Supports weekend exclusion, duplicate replacement, and item removal.
@@ -45,14 +45,30 @@ export { default as DateTimeRangeList } from "./elements/DateTimeRangePicker";
 
 ## Theming
 
-All elements are designed to respect **Calcite** tokens (no hard‑coded colors). Some elements also expose project‑level tokens for fine control. See each element’s README for the exact tokens it uses.
+All elements resolve colors through a three‑tier cascade — no hard‑coded hex values:
 
-Common Calcite tokens referenced across elements:
+```
+VertiGIS host variable  →  Calcite fallback  →  hardcoded default
+```
 
-* `--calcite-ui-brand`, `--calcite-ui-border-input`
-* `--calcite-ui-foreground-1/2/3`
-* `--calcite-ui-text-1/3`
+**VertiGIS host variables (first tier)** — set automatically by VertiGIS Studio Web on the app shell:
+
+* `--primaryBackground`, `--secondaryBackground`, `--primaryBackgroundDisabled`
+* `--primaryForeground`, `--secondaryForeground`
+* `--primaryAccent`
+* `--primaryBorder`, `--inputBorder`
+* `--itemHoverBackground`, `--itemSelectedBackground`
+* `--alertRedBackground`
+* `--defaultFont`, `--border-radius-small`
+
+**Calcite fallbacks (second tier):**
+
+* `--calcite-ui-foreground-1/2/3`, `--calcite-ui-text-1/3`
+* `--calcite-ui-brand`, `--calcite-ui-border-1`
+* `--calcite-border-radius`, `--calcite-shadow-1`
 * `--calcite-floating-ui-z-index` → `--calcite-app-z-index-dropdown`
+
+See each element’s `docs/` README for the exact token map it uses.
 
 ---
 

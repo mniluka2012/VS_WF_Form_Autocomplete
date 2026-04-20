@@ -6,6 +6,22 @@ import Popper from "@mui/material/Popper";
 // Accept only a simple JSON array of primitives (string | number)
 type Primitive = string | number;
 
+type MaybeMarkdown = string | { markdown: string };
+
+function unwrapString(value?: unknown): string | undefined {
+    if (value == null) return undefined;
+    const text = typeof value === "string" ? value : (value as any).markdown ?? String(value);
+    return text.replace(/\\([\\`*_{}[\]()#+\-.!])/g, "$1");
+}
+
+function sortPrimitives(items: Primitive[], sort?: "asc" | "desc" | "none"): Primitive[] {
+    if (!sort || sort === "none") return items;
+    const sorted = [...items].sort((a, b) =>
+        String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" })
+    );
+    return sort === "desc" ? sorted.reverse() : sorted;
+}
+
 interface AutocompleteProps extends FormElementProps<Primitive | Primitive[] | null> {
     /** The list of options as a simple JSON array of strings or numbers. */
     options?: Primitive[];
@@ -31,12 +47,23 @@ interface AutocompleteProps extends FormElementProps<Primitive | Primitive[] | n
     groupBy?: (option: Primitive) => string | null | undefined;
 
     // UX
-    placeholder?: string;
-    label?: string;
-    helperText?: string;
+    placeholder?: MaybeMarkdown;
+    label?: MaybeMarkdown;
+    helperText?: MaybeMarkdown;
     autoFocus?: boolean;
     readOnly?: boolean;
     disabled?: boolean;
+
+    /**
+     * @displayName Sort Order
+     * @description Sort the options list. "asc" = A→Z, "desc" = Z→A, "none" = original order.
+     */
+    sortOrder?: "asc" | "desc" | "none";
+    /**
+     * @displayName Default Label
+     * @description Option value to pre-select on load. Only applied when no value is already set.
+     */
+    defaultLabel?: string;
 
     // Listbox sizing
     listboxMaxHeight?: number;
@@ -61,6 +88,8 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         setValue,
         raiseEvent,
         disabled = false,
+        require = false,
+        error: errorProp,
 
         // Data
         options = [],
@@ -80,11 +109,15 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         groupBy,
 
         // UX
-        placeholder = "",
-        label,
-        helperText,
+        placeholder: placeholderProp,
+        label: labelProp,
+        helperText: helperTextProp,
         autoFocus = false,
         readOnly = false,
+
+        // Sorting / defaults
+        sortOrder = "none",
+        defaultLabel,
 
         // Layout
         listboxMaxHeight = 220,
@@ -94,6 +127,14 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         className,
         style,
     } = props;
+
+    const label = unwrapString(labelProp);
+    const placeholder = unwrapString(placeholderProp) ?? "";
+    const helperText = unwrapString(helperTextProp);
+    const errorMessage = unwrapString(errorProp);
+    const hasError = Boolean(errorMessage);
+
+    const sortedOptions = React.useMemo(() => sortPrimitives(options, sortOrder), [options, sortOrder]);
 
     // ---- VertiGIS host tokens (first tier) → Calcite fallback → hardcoded ----
     const theme = {
@@ -115,6 +156,19 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
     const emit = React.useCallback((name: string, payload?: any) => {
         (raiseEvent as any)?.(name as any, payload as any);
     }, [raiseEvent]);
+
+    // Pre-select by value string when defaultLabel is set and no value is currently stored.
+    React.useEffect(() => {
+        if (!defaultLabel || value != null) return;
+        const match = sortedOptions.find(
+            o => String(o).localeCompare(defaultLabel, undefined, { sensitivity: "base" }) === 0
+        );
+        if (match != null) {
+            const out = multiple ? [match] : match;
+            setValue(out as any);
+            emit("changed", { value: out });
+        }
+    }, [defaultLabel, sortedOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Controlled value mapping for the hook
     const hookValue = React.useMemo(() => {
@@ -167,7 +221,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
     } = (useAutocomplete as any)({
         multiple,
         freeSolo,
-        options,
+        options: sortedOptions,
         getOptionLabel: (o: Primitive) => String(o),
         filterOptions: filterOptions as any,
         groupBy: groupBy as any,
@@ -239,11 +293,11 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                     alignItems: "center",
                     flexWrap: "wrap",
                     gap: 4,
-                    border: `1px solid ${focused ? theme.brand : theme.borderInput}`,
+                    border: `1px solid ${focused ? theme.brand : hasError ? "var(--alertRedBackground, #d32f2f)" : theme.borderInput}`,
                     borderRadius: theme.radius as any,
                     padding: label ? "18px 10px 6px" : "8px 10px",
                     background: disabled ? theme.disabledBg : theme.surface,
-                    outline: focused ? `1px solid ${theme.brand}` : "none",
+                    outline: focused ? `1px solid ${theme.brand}` : hasError ? `1px solid var(--alertRedBackground, #d32f2f)` : "none",
                     transition: "border-color 120ms ease, outline 120ms ease",
                 }}
             >
@@ -259,7 +313,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                             transformOrigin: "left center",
                             fontSize: 14,
                             lineHeight: "1",
-                            color: focused ? theme.brand : theme.textMuted,
+                            color: focused ? theme.brand : hasError ? "var(--alertRedBackground, #d32f2f)" : theme.textMuted,
                             pointerEvents: "none",
                             // The notch: a background strip that hides the border behind the label text
                             backgroundColor: labelShrunk ? resolvedSurface : "transparent",
@@ -270,6 +324,9 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                         }}
                     >
                         {label}
+                        {require && (
+                            <span style={{ color: "var(--alertRedBackground, #d32f2f)", marginLeft: 2 }} aria-hidden="true">*</span>
+                        )}
                     </span>
                 )}
 
@@ -419,7 +476,14 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                 </ul>
             </Popper>
 
-            {helperText && <div style={{ marginTop: 4, fontSize: 12, color: theme.textMuted }}>{helperText}</div>}
+            {hasError && (
+                <div style={{ marginTop: 4, fontSize: 12, color: "var(--alertRedBackground, #d32f2f)", fontFamily: "var(--defaultFont, inherit)" }}>
+                    {errorMessage}
+                </div>
+            )}
+            {!hasError && helperText && (
+                <div style={{ marginTop: 4, fontSize: 12, color: theme.textMuted }}>{helperText}</div>
+            )}
         </div>
     );
 }
@@ -440,6 +504,7 @@ const AutocompleteElementRegistration: FormElementRegistration<AutocompleteProps
         helperText: "",
         autoFocus: false,
         readOnly: false,
+        sortOrder: "none",
         listboxMaxHeight: 220,
     }),
     id: "Autocomplete",
