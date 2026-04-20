@@ -239,7 +239,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                     alignItems: "center",
                     flexWrap: "wrap",
                     gap: 4,
-                    border: `1px solid ${focused ? theme.brand : theme.border}`,
+                    border: `1px solid ${focused ? theme.brand : theme.borderInput}`,
                     borderRadius: theme.radius as any,
                     padding: label ? "18px 10px 6px" : "8px 10px",
                     background: disabled ? theme.disabledBg : theme.surface,
