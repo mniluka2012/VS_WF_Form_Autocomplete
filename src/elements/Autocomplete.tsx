@@ -95,19 +95,20 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         style,
     } = props;
 
-    // ---- Calcite/VertiGIS tokens (favor host variables; minimal fallbacks) ----
+    // ---- VertiGIS host tokens (first tier) → Calcite fallback → hardcoded ----
     const theme = {
-        surface: "var(--calcite-ui-foreground-1, var(--calcite-color-foreground-1, #fff))",
-        surfaceElevated: "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, #f5f5f5))",
-        disabledBg: "var(--calcite-ui-foreground-3, var(--calcite-color-foreground-3, #eee))",
-        border: "var(--calcite-ui-border-1, var(--calcite-color-border-1, #ccc))",
-        borderInput: "var(--calcite-ui-border-input, var(--calcite-ui-border-1, #ccc))",
-        text: "var(--calcite-ui-text-1, var(--calcite-color-text-1, inherit))",
-        textMuted: "var(--calcite-ui-text-3, var(--calcite-color-text-3, #6a6a6a))",
-        brand: "var(--calcite-ui-brand, var(--calcite-color-brand, #007ac2))",
-        focusOffset: "var(--calcite-ui-focus-offset-invert, 0)",
-        radius: "var(--calcite-border-radius, 8px)",
-        shadow: "var(--calcite-shadow-1, 0 8px 24px rgba(0,0,0,0.08))",
+        surface:         "var(--primaryBackground, var(--calcite-ui-foreground-1, #fff))",
+        surfaceElevated: "var(--secondaryBackground, var(--calcite-ui-foreground-2, #f5f5f5))",
+        disabledBg:      "var(--primaryBackgroundDisabled, var(--calcite-ui-foreground-3, #eee))",
+        border:          "var(--primaryBorder, var(--calcite-ui-border-1, #ccc))",
+        borderInput:     "var(--inputBorder, var(--primaryBorder, #ccc))",
+        text:            "var(--primaryForeground, var(--calcite-ui-text-1, inherit))",
+        textMuted:       "var(--secondaryForeground, var(--calcite-ui-text-3, #6a6a6a))",
+        brand:           "var(--primaryAccent, var(--calcite-ui-brand, #007ac2))",
+        hoverBg:         "var(--itemHoverBackground, var(--calcite-ui-foreground-2, rgba(0,0,0,0.06)))",
+        selectedBg:      "var(--itemSelectedBackground, var(--calcite-ui-foreground-2, rgba(0,0,0,0.04)))",
+        radius:          "var(--border-radius-small, var(--calcite-border-radius, 4px))",
+        shadow:          "var(--calcite-shadow-1, 0 8px 24px rgba(0,0,0,0.08))",
     } as const;
 
     // Unified event emitter
@@ -146,7 +147,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
         let found: HTMLElement | null = null;
         while (el) {
             const cs = doc.defaultView?.getComputedStyle(el);
-            const fg = cs?.getPropertyValue("--calcite-ui-foreground-1") || cs?.getPropertyValue("--calcite-color-foreground-1");
+            const fg = cs?.getPropertyValue("--primaryBackground") || cs?.getPropertyValue("--calcite-ui-foreground-1") || cs?.getPropertyValue("--calcite-color-foreground-1");
             if (fg && fg.trim() !== "") { found = el; break; }
             el = el.parentElement as HTMLElement | null;
         }
@@ -374,7 +375,7 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                     zIndex: 1,
                     maxHeight: listboxMaxHeight,
                     overflow: "auto",
-                    background: "var(--primaryBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, #fff)))",
+                    background: theme.surface,
                     border: `1px solid ${theme.border}`,
                     borderRadius: theme.radius as any,
                     boxShadow: theme.shadow as any,
@@ -404,10 +405,8 @@ function Autocomplete(props: AutocompleteProps): React.ReactElement {
                                     gap: 8,
                                     background:
                                         hoveredIndex === index
-                                            ? "var(--itemHoverBackground, var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, rgba(0,0,0,0.04))))"
-                                            : (selected
-                                                ? "var(--calcite-ui-foreground-2, var(--calcite-color-foreground-2, rgba(0,0,0,0.04)))"
-                                                : undefined),
+                                            ? theme.hoverBg
+                                            : selected ? theme.selectedBg : undefined,
                                 }}
                                 aria-disabled={disabledOpt}
                                 aria-selected={selected}
